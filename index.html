@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>المدرسة الشرعية - بنك الأسئلة</title>
+<title>المدرسة الشرعية - بنك الأسئلة والمكتبة</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
 body { background: linear-gradient(135deg, #1a5f3f 0%, #0d3b26 100%); min-height: 100vh; padding: 20px; color: #333; }
@@ -22,13 +22,15 @@ label { display: block; margin-bottom: 8px; font-weight: bold; color: #1a5f3f; }
 input, select, textarea { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em; font-family: inherit; transition: 0.3s; }
 input:focus, select:focus, textarea:focus { border-color: #1a5f3f; outline: none; }
 textarea { min-height: 80px; resize: vertical; }
-.btn { padding: 12px 25px; background: #1a5f3f; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: bold; transition: 0.3s; margin: 5px 0; }
+.btn { padding: 12px 25px; background: #1a5f3f; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: bold; transition: 0.3s; margin: 5px 0; display: inline-block; text-align: center; }
 .btn:hover { background: #0d3b26; transform: translateY(-2px); }
 .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn-danger { background: #c0392b; }
 .btn-danger:hover { background: #a93226; }
 .btn-secondary { background: #7f8c8d; }
 .btn-secondary:hover { background: #5d6d6e; }
+.btn-gold { background: #d4a017; color:#fff; }
+.btn-gold:hover { background: #b8860b; }
 .option-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
 .option-row input[type="radio"] { width: 20px; height: 20px; flex-shrink: 0; }
 .option-row input[type="text"] { flex: 1; }
@@ -73,6 +75,28 @@ textarea { min-height: 80px; resize: vertical; }
 .subject-pick-card h3 { margin-bottom: 8px; }
 .subject-pick-card small { opacity: 0.8; }
 .loading { text-align: center; padding: 20px; color: #1a5f3f; font-weight: bold; }
+
+/* Timer Style */
+.timer-box { position: fixed; top: 15px; right: 15px; background: #c0392b; color: white; padding: 15px 25px; border-radius: 10px; font-size: 1.5em; font-weight: bold; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px; }
+.timer-warning { background: #f39c12 !important; }
+
+/* Explanation Style */
+.explanation-box { background: #fff3cd; border-right: 4px solid #f39c12; padding: 15px; margin-top: 15px; border-radius: 8px; color: #856404; }
+
+/* Results Table */
+.results-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+.results-table th, .results-table td { padding: 12px; text-align: right; border-bottom: 1px solid #ddd; }
+.results-table th { background-color: #1a5f3f; color: white; }
+.results-table tr:hover { background-color: #f5f5f5; }
+
+/* Print Style */
+@media print {
+  body { background: white; padding: 0; }
+  .logout, .btn, .tabs, .progress-bar, .exam-question:not(.result-review) { display: none !important; }
+  .card { box-shadow: none; margin: 0; padding: 0; }
+  .result-card { padding: 20px; }
+  .result-review { border: none !important; page-break-inside: avoid; }
+}
 </style>
 </head>
 <body>
@@ -80,7 +104,7 @@ textarea { min-height: 80px; resize: vertical; }
 <!-- شاشة اختيار الدور -->
 <div id="welcomeScreen" class="container">
   <div class="card welcome-screen">
-    <h1>🕌 المدرسة الشرعية</h1>
+    <h1>🕌 ثانوية الشيخ مصطفى السيوطي</h1>
     <p>منصة بنك الأسئلة والاختبارات الإلكترونية</p>
     <div class="role-buttons">
       <div class="role-btn" onclick="chooseRole('teacher')">
@@ -93,6 +117,11 @@ textarea { min-height: 80px; resize: vertical; }
         لوحة الطالب
         <div style="font-size:0.75em;margin-top:8px;font-weight:normal">حل الاختبارات</div>
       </div>
+      <div class="role-btn" onclick="openStudentLibrary()" style="border-color:#d4a017;">
+        <span class="icon">📚</span>
+        المكتبة الشرعية
+        <div style="font-size:0.75em;margin-top:8px;font-weight:normal">تحميل الكتب والمراجع</div>
+      </div>
     </div>
   </div>
 </div>
@@ -102,7 +131,7 @@ textarea { min-height: 80px; resize: vertical; }
   <button class="logout" onclick="logout()">🚪 خروج</button>
   <header>
     <h1>👨‍🏫 لوحة المعلم</h1>
-    <p>إدارة المواد والأسئلة</p>
+    <p>إدارة المواد والأسئلة والمكتبة</p>
   </header>
 
   <div class="card">
@@ -110,6 +139,8 @@ textarea { min-height: 80px; resize: vertical; }
       <button class="tab active" onclick="showTeacherTab('t-subjects', this)">📚 المواد</button>
       <button class="tab" onclick="showTeacherTab('t-add', this)">➕ إضافة سؤال</button>
       <button class="tab" onclick="showTeacherTab('t-manage', this)">🗂️ إدارة الأسئلة</button>
+      <button class="tab" onclick="showTeacherTab('t-results', this)">📊 نتائج الطلاب</button>
+      <button class="tab" onclick="showTeacherTab('t-library', this)">📖 المكتبة</button>
     </div>
 
     <div id="t-subjects">
@@ -140,6 +171,10 @@ textarea { min-height: 80px; resize: vertical; }
           <div class="option-row"><input type="radio" name="correct" value="3"><input type="text" placeholder="الخيار 4" class="option-input"></div>
         </div>
       </div>
+      <div class="form-group">
+        <label>شرح / تفسير الإجابة (اختياري)</label>
+        <textarea id="qExplanation" placeholder="اكتب الدليل أو الشرح هنا (اختياري)..."></textarea>
+      </div>
       <button class="btn" id="saveQBtn" onclick="addQuestion()">💾 حفظ السؤال</button>
     </div>
 
@@ -152,6 +187,33 @@ textarea { min-height: 80px; resize: vertical; }
       </div>
       <div id="questionsList"><div class="loading">جاري التحميل...</div></div>
     </div>
+
+    <div id="t-results" class="hidden">
+      <h2>نتائج وسجل الطلاب</h2>
+      <div id="resultsList"><div class="loading">جاري التحميل...</div></div>
+    </div>
+
+    <!-- قسم إدارة المكتبة للمعلم -->
+    <div id="t-library" class="hidden">
+      <h2>إدارة المكتبة الشرعية</h2>
+      
+      <div class="card" style="background:#f8f9fa; border:2px solid #1a5f3f; margin-bottom:20px;">
+        <h3 style="color:#1a5f3f; margin-bottom:15px;">➕ إضافة كتاب جديد</h3>
+        <div class="form-group">
+          <label>اسم الكتاب</label>
+          <input type="text" id="bookTitle" placeholder="مثال: رياض الصالحين">
+        </div>
+        <div class="form-group">
+          <label>رابط التحميل (Google Drive)</label>
+          <input type="text" id="bookUrl" placeholder="https://drive.google.com/...">
+        </div>
+        <button class="btn" onclick="addBook()">💾 حفظ الكتاب</button>
+      </div>
+
+      <h3 style="color:#1a5f3f; margin-bottom:15px;">الكتب المتوفرة حالياً:</h3>
+      <div id="adminBooksList"><div class="loading">جاري التحميل...</div></div>
+    </div>
+
   </div>
 </div>
 
@@ -172,14 +234,23 @@ textarea { min-height: 80px; resize: vertical; }
     <div id="studentStart" class="hidden">
       <h2 id="startTitle"></h2>
       <div class="form-group">
+        <label>الاسم الثلاثي *</label>
+        <input type="text" id="studentName" placeholder="أدخل اسمك هنا...">
+      </div>
+      <div class="form-group">
         <label>عدد الأسئلة</label>
         <input type="number" id="examCount" value="5" min="1">
+      </div>
+      <div class="form-group">
+        <label>الوقت المخصص للاختبار (بالدقائق)</label>
+        <input type="number" id="examTime" value="10" min="1">
       </div>
       <button class="btn" onclick="startExam()">🚀 ابدأ الاختبار</button>
       <button class="btn btn-secondary" onclick="backToSubjects()">↩️ رجوع</button>
     </div>
 
     <div id="examRunning" class="hidden">
+      <div id="timerDisplay" class="timer-box hidden">⏱️ <span id="timeLeft">00:00</span></div>
       <h2>الاختبار جارٍ...</h2>
       <div class="progress-bar"><div id="examProgress" style="width:0%"></div></div>
       <div id="examQuestions"></div>
@@ -187,6 +258,20 @@ textarea { min-height: 80px; resize: vertical; }
     </div>
 
     <div id="examResult" class="hidden"></div>
+  </div>
+</div>
+
+<!-- شاشة المكتبة للطلاب -->
+<div id="libraryPanel" class="container hidden">
+  <button class="logout" onclick="closeStudentLibrary()">↩️ رجوع</button>
+  <header>
+    <h1>📚 المكتبة الشرعية</h1>
+    <p>تحميل الكتب والمراجع</p>
+  </header>
+  <div class="card">
+    <div id="studentBooksList" class="subject-pick">
+      <div class="loading">جاري تحميل الكتب...</div>
+    </div>
   </div>
 </div>
 
@@ -211,22 +296,17 @@ const db = getFirestore(app);
 // ===== متغيرات عامة =====
 let subjects = [];
 let questions = [];
+let books = [];
 let currentSubject = '';
 let currentExam = [];
-
-// ===== أدوات مساعدة =====
-function saveSubjectsToLocal() { /* لم نعد نحتاجها، لكن نتركها فارغة */ }
-// ملاحظة: لم نعد نستخدم localStorage، البيانات كلها في Firestore
+let studentName = "";
+let timerInterval = null;
 
 // ===== اختيار الدور =====
 window.chooseRole = function(role) {
-    if (role === 'teacher') {
-    // 👇 هنا نضع كلمة المرور. غير الرقم 12345 إلى أي كلمة تريدها
+  if (role === 'teacher') {
     let password = prompt("أدخل كلمة المرور للدخول إلى لوحة المعلم:");
-    if (password !== "55555") {
-      alert("عذراً، كلمة المرور غير صحيحة!");
-      return; // يوقف العملية ولا يفتح اللوحة
-    }
+    if (password !== "55555") { alert("كلمة المرور غير صحيحة!"); return; }
   }
   document.getElementById('welcomeScreen').classList.add('hidden');
   if (role === 'teacher') {
@@ -244,19 +324,21 @@ window.logout = function() {
   document.getElementById('welcomeScreen').classList.remove('hidden');
   document.querySelectorAll('#studentPick,#studentStart,#examRunning,#examResult').forEach(el => el.classList.add('hidden'));
   document.getElementById('studentPick').classList.remove('hidden');
+  if(timerInterval) clearInterval(timerInterval);
 };
 
-// ========== تحميل البيانات من Firestore ==========
+// ========== تحميل البيانات ==========
 async function loadSubjects() {
   const snap = await getDocs(collection(db, "subjects"));
   subjects = snap.docs.map(d => d.data().name);
-  return subjects;
 }
-
 async function loadQuestions() {
   const snap = await getDocs(collection(db, "questions"));
   questions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  return questions;
+}
+async function loadBooks() {
+  const snap = await getDocs(collection(db, "library"));
+  books = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
 // ========== لوحة المعلم ==========
@@ -269,10 +351,12 @@ async function initTeacher() {
 }
 
 window.showTeacherTab = function(id, btn) {
-  ['t-subjects','t-add','t-manage'].forEach(t => document.getElementById(t).classList.add('hidden'));
+  ['t-subjects','t-add','t-manage','t-results','t-library'].forEach(t => document.getElementById(t).classList.add('hidden'));
   document.getElementById(id).classList.remove('hidden');
   document.querySelectorAll('#teacherPanel .tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
+  if(id === 't-results') renderResults();
+  if(id === 't-library') renderAdminBooks();
 };
 
 function refreshTeacherSelects() {
@@ -284,31 +368,20 @@ function refreshTeacherSelects() {
 
 window.addSubject = async function() {
   const name = document.getElementById('newSubject').value.trim();
-  if (!name) { alert('أدخل اسم المادة'); return; }
-  if (subjects.includes(name)) { alert('المادة موجودة'); return; }
+  if (!name || subjects.includes(name)) return;
   await addDoc(collection(db, "subjects"), { name: name, createdAt: new Date() });
   document.getElementById('newSubject').value = '';
-  await loadSubjects();
-  refreshTeacherSelects();
-  renderSubjects();
+  await loadSubjects(); refreshTeacherSelects(); renderSubjects();
 };
 
 window.deleteSubject = async function(name) {
   if (!confirm(`حذف المادة "${name}" وكل أسئلتها؟`)) return;
-  // حذف المادة
   const subSnap = await getDocs(collection(db, "subjects"));
-  for (const d of subSnap.docs) {
-    if (d.data().name === name) await deleteDoc(doc(db, "subjects", d.id));
-  }
-  // حذف أسئلتها
+  for (const d of subSnap.docs) { if (d.data().name === name) await deleteDoc(doc(db, "subjects", d.id)); }
   const qSnap = await getDocs(query(collection(db, "questions"), where("subject", "==", name)));
   for (const d of qSnap.docs) await deleteDoc(doc(db, "questions", d.id));
-  
-  await loadSubjects();
-  await loadQuestions();
-  refreshTeacherSelects();
-  renderSubjects();
-  renderQuestions();
+  await loadSubjects(); await loadQuestions();
+  refreshTeacherSelects(); renderSubjects(); renderQuestions();
 };
 
 function renderSubjects() {
@@ -326,28 +399,20 @@ function renderSubjects() {
 window.addQuestion = async function() {
   const subject = document.getElementById('qSubject').value;
   const text = document.getElementById('qText').value.trim();
+  const explanation = document.getElementById('qExplanation').value.trim();
   const inputs = document.querySelectorAll('.option-input');
   const options = Array.from(inputs).map(i => i.value.trim());
   const correctIdx = parseInt(document.querySelector('input[name="correct"]:checked').value);
 
-  if (!text) { alert('أدخل نص السؤال'); return; }
-  if (options.some(o => !o)) { alert('املأ جميع الخيارات'); return; }
+  if (!text || options.some(o => !o)) { alert('أكمل السؤال والخيارات'); return; }
+  const btn = document.getElementById('saveQBtn'); btn.disabled = true; btn.textContent = 'جاري الحفظ...';
 
-  const btn = document.getElementById('saveQBtn');
-  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
-
-  await addDoc(collection(db, "questions"), {
-    subject, text, options, correct: correctIdx, createdAt: new Date()
-  });
-
-  document.getElementById('qText').value = '';
+  await addDoc(collection(db, "questions"), { subject, text, options, correct: correctIdx, explanation, createdAt: new Date() });
+  document.getElementById('qText').value = ''; document.getElementById('qExplanation').value = '';
   inputs.forEach(i => i.value = '');
-  document.querySelector('input[name="correct"][value="0"]').checked = true;
   btn.disabled = false; btn.textContent = '💾 حفظ السؤال';
   alert('✅ تم حفظ السؤال');
-  await loadQuestions();
-  renderQuestions();
-  renderSubjects();
+  await loadQuestions(); renderQuestions(); renderSubjects();
 };
 
 function renderQuestions() {
@@ -358,9 +423,8 @@ function renderQuestions() {
   el.innerHTML = list.map(q => `
     <div class="question-item">
       <h4>[${q.subject}] ${q.text}</h4>
-      <ul class="options">
-        ${q.options.map((o,i) => `<li class="${i === q.correct ? 'correct' : ''}">${i === q.correct ? '✅ ' : ''}${o}</li>`).join('')}
-      </ul>
+      <ul class="options">${q.options.map((o,i) => `<li class="${i === q.correct ? 'correct' : ''}">${i === q.correct ? '✅ ' : ''}${o}</li>`).join('')}</ul>
+      ${q.explanation ? `<div class="explanation-box"><strong>الشرح:</strong> ${q.explanation}</div>` : ''}
       <button class="btn btn-danger" style="margin-top:10px;padding:6px 15px;font-size:0.9em" onclick="deleteQuestion('${q.id}')">🗑️ حذف</button>
     </div>
   `).join('');
@@ -369,43 +433,55 @@ function renderQuestions() {
 window.deleteQuestion = async function(id) {
   if (!confirm('حذف هذا السؤال؟')) return;
   await deleteDoc(doc(db, "questions", id));
-  await loadQuestions();
-  renderQuestions();
-  renderSubjects();
+  await loadQuestions(); renderQuestions(); renderSubjects();
 };
+
+// عرض النتائج للمعلم
+async function renderResults() {
+  const el = document.getElementById('resultsList');
+  el.innerHTML = '<div class="loading">جاري التحميل...</div>';
+  const snap = await getDocs(collection(db, "results"));
+  const results = snap.docs.map(d => d.data()).sort((a,b) => b.date - a.date);
+  
+  if(results.length === 0) { el.innerHTML = '<div class="empty">لا توجد نتائج مسجلة بعد.</div>'; return; }
+  
+  el.innerHTML = `<table class="results-table">
+    <thead><tr><th>الطالب</th><th>المادة</th><th>الدرجة</th><th>التاريخ</th></tr></thead>
+    <tbody>
+      ${results.map(r => `<tr>
+        <td>${r.studentName}</td><td>${r.subject}</td>
+        <td><strong style="color:${r.percent >= 50 ? '#27ae60' : '#c0392b'}">${r.percent}%</strong> (${r.correct}/${r.total})</td>
+        <td>${new Date(r.date).toLocaleString('ar-EG')}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
 
 // ========== لوحة الطالب ==========
 async function initStudent() {
-  await loadSubjects();
-  await loadQuestions();
-  renderStudentSubjects();
+  await loadSubjects(); await loadQuestions(); renderStudentSubjects();
 }
 
 function renderStudentSubjects() {
   const el = document.getElementById('studentSubjects');
-  if (subjects.length === 0) {
-    el.innerHTML = '<div class="empty">لا توجد مواد بعد. على المعلم إضافتها أولاً.</div>';
-    return;
-  }
+  if (subjects.length === 0) { el.innerHTML = '<div class="empty">لا توجد مواد بعد.</div>'; return; }
   el.innerHTML = subjects.map(s => {
     const count = questions.filter(q => q.subject === s).length;
     return `<div class="subject-pick-card" onclick="pickSubject('${s}')">
-      <h3>📖 ${s}</h3>
-      <small>${count} سؤال متاح</small>
+      <h3>📖 ${s}</h3><small>${count} سؤال متاح</small>
     </div>`;
   }).join('');
 }
 
 window.pickSubject = function(subject) {
   const count = questions.filter(q => q.subject === subject).length;
-  if (count === 0) { alert('لا توجد أسئلة لهذه المادة بعد'); return; }
+  if (count === 0) { alert('لا توجد أسئلة لهذه المادة'); return; }
   currentSubject = subject;
   document.getElementById('studentPick').classList.add('hidden');
   document.getElementById('studentStart').classList.remove('hidden');
   document.getElementById('startTitle').textContent = 'اختبار في مادة: ' + subject;
-  const inp = document.getElementById('examCount');
-  inp.value = Math.min(5, count);
-  inp.max = count;
+  document.getElementById('examCount').value = Math.min(5, count);
+  document.getElementById('examCount').max = count;
 };
 
 window.backToSubjects = function() {
@@ -413,11 +489,18 @@ window.backToSubjects = function() {
   document.getElementById('studentStart').classList.add('hidden');
   document.getElementById('examResult').classList.add('hidden');
   document.getElementById('examRunning').classList.add('hidden');
+  document.getElementById('timerDisplay').classList.add('hidden');
+  if(timerInterval) clearInterval(timerInterval);
 };
 
 window.startExam = function() {
+  studentName = document.getElementById('studentName').value.trim();
+  if(!studentName) { alert('يرجى إدخال اسمك أولاً'); return; }
+
   const count = parseInt(document.getElementById('examCount').value);
+  const timeMinutes = parseInt(document.getElementById('examTime').value);
   const pool = questions.filter(q => q.subject === currentSubject);
+  
   if (pool.length === 0) { alert('لا توجد أسئلة'); return; }
 
   const shuffled = [...pool].sort(() => Math.random() - 0.5);
@@ -439,7 +522,36 @@ window.startExam = function() {
   document.getElementById('examRunning').classList.remove('hidden');
   document.getElementById('examResult').classList.add('hidden');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  startTimer(timeMinutes);
 };
+
+function startTimer(minutes) {
+  const timerDisplay = document.getElementById('timerDisplay');
+  const timeLeftEl = document.getElementById('timeLeft');
+  timerDisplay.classList.remove('hidden');
+  timerDisplay.classList.remove('timer-warning');
+
+  let timeLeft = minutes * 60;
+  
+  const updateTimer = () => {
+    if(timeLeft <= 0) {
+      clearInterval(timerInterval);
+      alert('انتهى الوقت! سيتم إرسال إجاباتك تلقائياً.');
+      submitExam(true);
+      return;
+    }
+    timeLeft--;
+    if(timeLeft < 60) timerDisplay.classList.add('timer-warning');
+    
+    const m = Math.floor(timeLeft / 60);
+    const s = timeLeft % 60;
+    timeLeftEl.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+  
+  updateTimer();
+  timerInterval = setInterval(updateTimer, 1000);
+}
 
 window.selectOption = function(label) {
   const parent = label.closest('.exam-question');
@@ -447,7 +559,12 @@ window.selectOption = function(label) {
   label.classList.add('selected');
 };
 
-window.submitExam = function() {
+window.submitExam = async function(autoSubmit = false) {
+  if(!autoSubmit && !confirm('هل أنت متأكد من إرسال الإجابات؟')) return;
+  
+  if(timerInterval) clearInterval(timerInterval);
+  document.getElementById('timerDisplay').classList.add('hidden');
+
   let correct = 0;
   currentExam.forEach((q, idx) => {
     const selected = document.querySelector(`input[name="q${idx}"]:checked`);
@@ -460,12 +577,19 @@ window.submitExam = function() {
   if (percent >= 80) { cls = 'score-excellent'; msg = 'ممتاز! بارك الله فيك 🌟'; }
   else if (percent >= 60) { cls = 'score-good'; msg = 'جيد، واصل التقدم 💪'; }
 
+  try {
+    await addDoc(collection(db, "results"), {
+      studentName: studentName, subject: currentSubject,
+      correct: correct, total: total, percent: percent, date: Date.now()
+    });
+  } catch(e) { console.error("خطأ في حفظ النتيجة", e); }
+
   let review = currentExam.map((q, idx) => {
     const selected = document.querySelector(`input[name="q${idx}"]:checked`);
     const selIdx = selected ? parseInt(selected.value) : -1;
     const isCorrect = selIdx === q.correct;
     return `
-      <div class="exam-question" style="border-color:${isCorrect ? '#27ae60' : '#c0392b'}">
+      <div class="exam-question result-review" style="border-color:${isCorrect ? '#27ae60' : '#c0392b'}">
         <h4>${isCorrect ? '✅' : '❌'} س${idx+1}: ${q.text}</h4>
         ${q.options.map((o, i) => {
           let style = '', mark = '';
@@ -473,6 +597,7 @@ window.submitExam = function() {
           if (i === selIdx && i !== q.correct) { style = 'background:#f8d7da;'; mark = ' ❌ إجابتك'; }
           return `<div style="padding:8px;margin:4px 0;border-radius:6px;${style}">${o}${mark}</div>`;
         }).join('')}
+        ${q.explanation ? `<div class="explanation-box"><strong>الشرح:</strong> ${q.explanation}</div>` : ''}
       </div>
     `;
   }).join('');
@@ -481,12 +606,17 @@ window.submitExam = function() {
   const res = document.getElementById('examResult');
   res.classList.remove('hidden');
   res.innerHTML = `
-    <div class="result-card">
+    <div class="result-card" id="printableArea">
       <h2>نتيجة الاختبار</h2>
+      <h3 style="color:#1a5f3f; margin-bottom:15px;">الطالب: ${studentName}</h3>
       <div class="score ${cls}">${percent}%</div>
       <p style="font-size:1.3em;font-weight:bold;color:#1a5f3f">${correct} من ${total}</p>
       <p style="margin:15px 0;font-size:1.1em">${msg}</p>
-      <button class="btn" onclick="backToSubjects()">🔄 العودة للمواد</button>
+      <p style="color:#666; font-size:0.9em;">التاريخ: ${new Date().toLocaleString('ar-EG')}</p>
+    </div>
+    <div style="text-align:center; margin-bottom:20px;">
+      <button class="btn btn-gold" onclick="window.print()">🖨️ طباعة النتيجة</button>
+      <button class="btn" onclick="backToSubjects()">🔄 العودة للرئيسية</button>
     </div>
     <h2 style="margin-top:20px">مراجعة الإجابات</h2>
     ${review}
@@ -494,9 +624,72 @@ window.submitExam = function() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// ربط الدوال بالنافذة (لأنها داخل module)
-window.initTeacher = initTeacher;
-window.initStudent = initStudent;
+// ========== المكتبة الشرعية ==========
+window.openStudentLibrary = async function() {
+  document.getElementById('welcomeScreen').classList.add('hidden');
+  document.getElementById('libraryPanel').classList.remove('hidden');
+  const el = document.getElementById('studentBooksList');
+  el.innerHTML = '<div class="loading">جاري التحميل...</div>';
+  
+  await loadBooks();
+  if (books.length === 0) {
+    el.innerHTML = '<div class="empty">لا توجد كتب في المكتبة حالياً.</div>';
+    return;
+  }
+  
+  el.innerHTML = books.map(b => `
+    <a href="${b.url}" target="_blank" class="subject-pick-card" style="text-decoration:none; color:inherit; display:block;">
+      <h3>📖 ${b.title}</h3>
+      <small>اضغط للتحميل أو القراءة</small>
+    </a>
+  `).join('');
+};
+
+window.closeStudentLibrary = function() {
+  document.getElementById('libraryPanel').classList.add('hidden');
+  document.getElementById('welcomeScreen').classList.remove('hidden');
+};
+
+window.addBook = async function() {
+  const title = document.getElementById('bookTitle').value.trim();
+  const url = document.getElementById('bookUrl').value.trim();
+  
+  if (!title || !url) { alert('يرجى إدخال اسم الكتاب والرابط'); return; }
+  
+  await addDoc(collection(db, "library"), { title: title, url: url, createdAt: new Date() });
+  
+  document.getElementById('bookTitle').value = '';
+  document.getElementById('bookUrl').value = '';
+  alert('✅ تم إضافة الكتاب بنجاح');
+  
+  await loadBooks();
+  renderAdminBooks();
+};
+
+async function renderAdminBooks() {
+  const el = document.getElementById('adminBooksList');
+  await loadBooks();
+  if (books.length === 0) {
+    el.innerHTML = '<div class="empty">لا توجد كتب مضافة بعد.</div>';
+    return;
+  }
+  el.innerHTML = books.map(b => `
+    <div class="question-item" style="display:flex; justify-content:space-between; align-items:center; border-right-color:#d4a017;">
+      <div>
+        <h4>📖 ${b.title}</h4>
+        <small style="color:#666; word-break:break-all; display:block; margin-top:5px;">${b.url}</small>
+      </div>
+      <button class="btn btn-danger" style="padding:6px 15px;font-size:0.9em; margin-right:10px;" onclick="deleteBook('${b.id}')">🗑️ حذف</button>
+    </div>
+  `).join('');
+}
+
+window.deleteBook = async function(id) {
+  if (!confirm('هل أنت متأكد من حذف هذا الكتاب؟')) return;
+  await deleteDoc(doc(db, "library", id));
+  await loadBooks();
+  renderAdminBooks();
+};
 </script>
 </body>
 </html>
