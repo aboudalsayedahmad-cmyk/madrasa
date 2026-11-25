@@ -220,6 +220,14 @@ function saveSubjectsToLocal() { /* لم نعد نحتاجها، لكن نترك
 
 // ===== اختيار الدور =====
 window.chooseRole = function(role) {
+    if (role === 'teacher') {
+    // 👇 هنا نضع كلمة المرور. غير الرقم 12345 إلى أي كلمة تريدها
+    let password = prompt("أدخل كلمة المرور للدخول إلى لوحة المعلم:");
+    if (password !== "55555") {
+      alert("عذراً، كلمة المرور غير صحيحة!");
+      return; // يوقف العملية ولا يفتح اللوحة
+    }
+  }
   document.getElementById('welcomeScreen').classList.add('hidden');
   if (role === 'teacher') {
     document.getElementById('teacherPanel').classList.remove('hidden');
