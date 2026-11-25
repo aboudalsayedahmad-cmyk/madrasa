@@ -437,25 +437,45 @@ window.deleteQuestion = async function(id) {
 };
 
 // عرض النتائج للمعلم
+// عرض النتائج للمعلم
 async function renderResults() {
   const el = document.getElementById('resultsList');
   el.innerHTML = '<div class="loading">جاري التحميل...</div>';
   const snap = await getDocs(collection(db, "results"));
-  const results = snap.docs.map(d => d.data()).sort((a,b) => b.date - a.date);
+  const results = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => b.date - a.date);
   
   if(results.length === 0) { el.innerHTML = '<div class="empty">لا توجد نتائج مسجلة بعد.</div>'; return; }
   
-  el.innerHTML = `<table class="results-table">
-    <thead><tr><th>الطالب</th><th>المادة</th><th>الدرجة</th><th>التاريخ</th></tr></thead>
+  el.innerHTML = `
+    <button class="btn btn-danger" style="margin-bottom:15px;" onclick="clearAllResults()">🗑️ مسح كل السجل</button>
+    <table class="results-table">
+    <thead><tr><th>الطالب</th><th>المادة</th><th>الدرجة</th><th>التاريخ</th><th>إجراء</th></tr></thead>
     <tbody>
       ${results.map(r => `<tr>
         <td>${r.studentName}</td><td>${r.subject}</td>
         <td><strong style="color:${r.percent >= 50 ? '#27ae60' : '#c0392b'}">${r.percent}%</strong> (${r.correct}/${r.total})</td>
         <td>${new Date(r.date).toLocaleString('ar-EG')}</td>
+        <td><button class="btn btn-danger" style="padding:5px 10px; font-size:0.8em;" onclick="deleteResult('${r.id}')">🗑️ حذف</button></td>
       </tr>`).join('')}
     </tbody>
   </table>`;
 }
+// حذف نتيجة واحدة
+window.deleteResult = async function(id) {
+  if (!confirm('هل أنت متأكد من حذف نتيجة هذا الطالب؟')) return;
+  await deleteDoc(doc(db, "results", id));
+  renderResults(); // إعادة تحديث الجدول
+};
+
+// حذف كل السجل
+window.clearAllResults = async function() {
+  if (!confirm('هل أنت متأكد من حذف جميع نتائج الطلاب؟ لا يمكن التراجع عن هذه الخطوة!')) return;
+  const snap = await getDocs(collection(db, "results"));
+  for (const d of snap.docs) {
+    await deleteDoc(doc(db, "results", d.id));
+  }
+  renderResults(); // إعادة تحديث الجدول
+};
 
 // ========== لوحة الطالب ==========
 async function initStudent() {
